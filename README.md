@@ -77,6 +77,7 @@ One mode (plus an internal practice preset that never appears in the mode picker
 - **No** `pwsh` / `bash` / `jobs`, and **no** `write` / `edit`
 - One read-only practice sub-agent (a separate preset, hidden from the mode picker by the roster shim)
 - Subject step-by-step protocol: decomposition, one step at a time, stuck-point → hint-shape mapping, demo channel
+- Web verification: formulas/theorems/APIs/textbooks/rubrics (links + quoted excerpts; never search for the original problem answer)
 - Context compaction, so a long practice session doesn't grow until it overflows
 
 Seven skills ship inside the bundle and are discovered through `skill-filesystem`'s `customSkillDirs`, with the path resolved from the bundle's own location:
@@ -109,11 +110,17 @@ The practice preset does not appear in the mode picker (the roster shim filters 
 
 ## Install
 
+Repository: <https://github.com/Mashiro-Neri/dsh-study-mode>. Easiest is to install straight from GitHub:
+
+```bash
+dsh plugin --profile desktop add github:Mashiro-Neri/dsh-study-mode
+```
+
 Needs DSH **0.2.1-rc.2 or newer** (`package.json` declares `engines.dsh`; older hosts cannot load the preset model). Three install paths, how to confirm it worked, and troubleshooting all live in **[INSTALL.zh.md](INSTALL.zh.md)** (Chinese). The shortest one:
 
 ```
 # In a fresh standard-mode session:
-Install C:\Users\li_jie\.dsh\dsh-local-bundles\dsh-study-mode\dist\dsh-community-dsh-study-mode-2.0.0.tgz as a plugin bundle into the current profile
+Install <extracted-dir>\dist\dsh-community-dsh-study-mode-2.2.1.tgz as a plugin bundle into the current profile
 ```
 
 That drives `plugin_manager`'s `install_bundle`: pnpm install → write `dsh.profile.bundles` → apply the patch. Then **restart DSH completely** (a newly inserted preset row needs a restart; the profile patch layer itself is live).
@@ -126,9 +133,9 @@ Built artifacts live in `dist/`:
 
 | File | Notes |
 |---|---|
-| `dsh-community-dsh-study-mode-2.0.0.tgz` | Installable npm package for `plugin_manager install_bundle`, or `dsh plugin --profile <p> add <path>` |
+| `dsh-community-dsh-study-mode-2.2.1.tgz` | Installable npm package for `plugin_manager install_bundle`, or `dsh plugin --profile <p> add <path>` |
 | `…tgz.sha256` | SHA256 of the tarball |
-| `dsh-study-mode-2.0.0.zip` | **Whole-package archive**: source tree plus the tarball, self-contained — extracting yields a single top-level folder `dsh-study-mode-2.0.0/` |
+| `dsh-study-mode-2.2.1.zip` | **Whole-package archive**: source tree plus the tarball, self-contained — extracting yields a single top-level folder `dsh-study-mode-2.2.1/` |
 | `…zip.sha256` | SHA256 of the zip |
 
 **The two artifacts serve different purposes.** The `.tgz` is what DSH's `plugin_manager` consumes; the `.zip` is the human-facing bundle — unzip it and you have the source, the docs and working build scripts, no clone required. The tarball inside the zip matches its own bundled `.sha256`.
@@ -136,7 +143,7 @@ Built artifacts live in `dist/`:
 The zip holds 32 files (counting rule: one clean rebuild — `build-package.ps1` then `build-zip.ps1`: 30 files from the repository source tree plus the tarball and its sha256 in `dist/`; the zip being generated is not inside itself, and `.git` / `node_modules` are excluded):
 
 ```
-dsh-study-mode-2.0.0/
+dsh-study-mode-2.2.1/
 ├── src/                   source: persona Markdown + composition template
 ├── cordis.patch.yml       generated composition patch
 ├── package.json
@@ -160,8 +167,6 @@ package/README.md, README.zh.md, INSTALL.zh.md, CHANGELOG.md, LICENSE
 ```
 
 **Skill-path resolution handles both install layouts.** Linked locally the package is `@local/dsh-study-mode`; installed from a tarball, registry or git it is `@dsh-community/dsh-study-mode`. The patch's `!!js` expression walks a candidate list and takes the first one that resolves; when none resolves it **throws a readable error** instead of silently producing an empty skill directory. Hard-coding either name makes the other layout silently lose every skill — exactly the trap on your requirements-mode bundle.
-
-**Publishing to npm or GitHub requires dropping `"private": true`** (kept for now to prevent an accidental publish into a community scope this package doesn't own yet).
 
 ## Known tradeoffs and limitations
 
@@ -205,7 +210,7 @@ powershell -ExecutionPolicy Bypass -File scripts/build-package.ps1
 powershell -ExecutionPolicy Bypass -File scripts/build-zip.ps1
 
 # Release: version + changelog checks -> all checks -> pack -> tag -> GitHub Release
-powershell -ExecutionPolicy Bypass -File scripts/release.ps1 -Version 2.0.0
+powershell -ExecutionPolicy Bypass -File scripts/release.ps1 -Version 2.2.1
 ```
 
 `check-bundle.cjs` checks eleven things: both presets exist with the child declared before the main one; the delegation row points at `study-practice` and carries no fields the Host removed in 0.2.1; no self-mounted subagent runtime or shell row crept in; both `tool-fs` rows disable `write` / `edit`; the practice preset's tool surface is exactly the rows it should have; the main persona keeps its behavioural markers and skill routes; every skill's frontmatter is valid and **at least one `customSkillDirs` candidate resolves from the profile to a `skills/` directory that actually exists** (it throws when none does); the roster shim exists and lists the practice preset; **`cordis.patch.yml` is in sync with the `src/` sources**; **the teaching-contract clauses** ("no assessment interrogation", "subject step-by-step", "demo channel", "stuck-point type", "micro-objective", …) still exist in the persona/skills; and the package manifest's `files` allowlist ships everything the patch references. It has no external dependencies, so it runs without installing anything.
@@ -259,3 +264,5 @@ Structural changes need a DSH restart; skill bodies hot-reload. Release steps li
 ## License
 
 MIT
+
+[![](https://img.shields.io/badge/powered_by-dsh-4D6BFE?style=flat-square&logo=deepseek&logoColor=white)](https://github.com/deepseek-ai/deepseek-harness)

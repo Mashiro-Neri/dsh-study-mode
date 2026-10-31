@@ -75,6 +75,7 @@
 - **没有** `pwsh` / `bash` / `jobs`，**也没有** `write` / `edit`
 - 一个只读的练习员子代理（独立 preset，被花名册补丁从模式选择器里隐藏）
 - 学科逐步引导协议：拆步、一次一步、卡点类型映射、示范通道
+- 联网核对资料：公式/定理/API/教材/评分标准（给链接与原文；不搜原题答案、不转述网上解法）
 - 上下文压缩：长练习会话不会一路涨到装不下
 
 七个技能随包分发，通过 `skill-filesystem` 的 `customSkillDirs` 发现，路径在加载时从本包位置解析：
@@ -107,11 +108,17 @@
 
 ## 安装
 
-需要 DSH **0.2.1-rc.2 或更新**（`package.json` 声明了 `engines.dsh`，更老的宿主加载不了 preset 模型）。三种方式、装完怎么确认、出问题怎么查，都写在 **[INSTALL.zh.md](INSTALL.zh.md)**。最省事的一种：
+需要 DSH **0.2.1-rc.2 或更新**（`package.json` 声明了 `engines.dsh`，更老的宿主加载不了 preset 模型）。三种方式、装完怎么确认、出问题怎么查，都写在 **[INSTALL.zh.md](INSTALL.zh.md)**。仓库：<https://github.com/Mashiro-Neri/dsh-study-mode>。最省事的一种（从 GitHub 直接装）：
+
+```bash
+dsh plugin --profile desktop add github:Mashiro-Neri/dsh-study-mode
+```
+
+或者从本地 tgz 安装：
 
 ```
 # 新开一个标准模式会话，把这句话发给它
-把 C:\Users\li_jie\.dsh\dsh-local-bundles\dsh-study-mode\dist\dsh-community-dsh-study-mode-2.0.0.tgz 作为插件组合包装到当前 profile
+把 <解压目录>\dist\dsh-community-dsh-study-mode-2.2.1.tgz 作为插件组合包装到当前 profile
 ```
 
 它会调用 `plugin_manager` 的 `install_bundle` 走完 pnpm 安装 → 写入 `dsh.profile.bundles` → 应用 patch。装完**完整重启一次 DSH**（新增 preset 行需要重启；profile 的 patch 层是 live 的，但 preset 花名册不是）。
@@ -124,9 +131,9 @@
 
 | 文件 | 说明 |
 |---|---|
-| `dsh-community-dsh-study-mode-2.0.0.tgz` | 可安装的 npm 包，可交给 `plugin_manager` 的 `install_bundle`，或用 `dsh plugin --profile <p> add <路径>` |
+| `dsh-community-dsh-study-mode-2.2.1.tgz` | 可安装的 npm 包，可交给 `plugin_manager` 的 `install_bundle`，或用 `dsh plugin --profile <p> add <路径>` |
 | `…tgz.sha256` | 上面那个包的 SHA256 校验值 |
-| `dsh-study-mode-2.0.0.zip` | **整包压缩档**：源码树 + 上面那个 tgz，自包含，解压即得一个顶层文件夹 `dsh-study-mode-2.0.0/` |
+| `dsh-study-mode-2.2.1.zip` | **整包压缩档**：源码树 + 上面那个 tgz，自包含，解压即得一个顶层文件夹 `dsh-study-mode-2.2.1/` |
 | `…zip.sha256` | 上面那个 zip 的 SHA256 校验值 |
 
 **两个产物的用途不同**：`.tgz` 是给 DSH 的 `plugin_manager` 吃的安装包；`.zip` 是给人看的整包——拿到就能读源码、看文档、直接跑打包脚本，不需要另外去 clone。zip 里的 tgz 校验值与它自带的 `.sha256` 一致。
@@ -134,7 +141,7 @@
 zip 里共 32 个文件（口径：一次干净的重新打包——先 `build-package.ps1` 再 `build-zip.ps1`：仓库源码树 30 个文件 + `dist/` 里的 tgz 与它的 sha256；不含正在生成的 zip 本身，也不含 `.git` / `node_modules` 这类被排除项）：
 
 ```
-dsh-study-mode-2.0.0/
+dsh-study-mode-2.2.1/
 ├── src/                    源：persona Markdown + 组合模板
 ├── cordis.patch.yml        由 src/ 生成的组合补丁
 ├── package.json
@@ -158,8 +165,6 @@ package/README.md, README.zh.md, INSTALL.zh.md, CHANGELOG.md, LICENSE
 ```
 
 **技能路径解析已经做成两种安装布局都能用**：本地 link 时包名是 `@local/dsh-study-mode`，tgz / registry / git 安装时是 `@dsh-community/dsh-study-mode`。patch 里的 `!!js` 表达式按候选列表逐个 `try`，取第一个解析得到的；全都不匹配时**抛一个可读的错误**，而不是静默得到空技能目录。写死任一个都会让另一种布局静默失去全部技能——这正是你 requirements-mode 上踩过的那个坑。
-
-**发布到 npm 或 GitHub 需要先把 `"private": true` 去掉**（现在保留着，是为了防止误发到一个还没有归属的社区 scope）。
 
 ## 已知的取舍与不足
 
@@ -203,7 +208,7 @@ powershell -ExecutionPolicy Bypass -File scripts/build-package.ps1
 powershell -ExecutionPolicy Bypass -File scripts/build-zip.ps1
 
 # 发布：校验版本与日志 → 全部检查 → 打包 → tag → GitHub Release
-powershell -ExecutionPolicy Bypass -File scripts/release.ps1 -Version 2.0.0
+powershell -ExecutionPolicy Bypass -File scripts/release.ps1 -Version 2.2.1
 ```
 
 `check-bundle.cjs` 检查十一类事：两个 preset 是否存在且子级先于主级声明；委派行是否指向 `study-practice`、是否还残留宿主 0.2.1 已删除的旧字段；有没有混进自挂的子 agent 运行时或 shell 行；两个 `tool-fs` 行是否都关掉了 `write` / `edit`；练习员的工具面是否恰好只有它该有的那几行；主 persona 的行为标记与技能路由是否齐全；每个技能的 frontmatter 是否合法、`customSkillDirs` 的候选包名**至少有一个能从 profile 解析出真实存在的 `skills/` 目录**（解析不到就抛错）；花名册补丁是否存在并列出练习员；**`cordis.patch.yml` 是否与 `src/` 源同步**；**教学契约**（"考核不盘问""学科逐步引导""示范通道""卡点类型""微目标"等承诺是否还在 persona/技能里）；`package.json` 的 `files` 白名单是否齐全。它不依赖外部 YAML 包，也不需要先装依赖。
@@ -220,7 +225,7 @@ powershell -ExecutionPolicy Bypass -File scripts/release.ps1 -Version 2.0.0
 .
 ├── package.json            声明这是个 DSH 组合包（@dsh-community/dsh-study-mode）
 ├── src/                    源：persona Markdown + 组合模板
-│   ├── persona.md          主 preset 的常驻人格（约 5200 字）
+│   ├── persona.md          主 preset 的常驻人格（约 4200 字）
 │   ├── practice-persona.md 练习员 preset 的人格
 │   └── cordis.patch.template.yml  两个 preset + 花名册补丁的模板
 ├── cordis.patch.yml        由 src/ 生成的组合补丁（勿手改）
@@ -257,3 +262,5 @@ powershell -ExecutionPolicy Bypass -File scripts/release.ps1 -Version 2.0.0
 ## License
 
 MIT
+
+[![](https://img.shields.io/badge/powered_by-dsh-4D6BFE?style=flat-square&logo=deepseek&logoColor=white)](https://github.com/deepseek-ai/deepseek-harness)

@@ -2,7 +2,7 @@
 
 给 DSH（DeepSeek Harness）装「学习模式」。装完的结果是：设置 →「模式」里多一张「学习模式」卡片，新建会话时可以选它。（只多这一张——内部的练习员 preset 被花名册补丁隐藏，不会出现在模式列表里。）
 
-包名：`@dsh-community/dsh-study-mode` ｜ 版本：`2.1.0`
+包名：`@dsh-community/dsh-study-mode` ｜ 版本：`2.2.1`
 
 ---
 
@@ -26,8 +26,8 @@
 
 | 你手上有什么 | 填什么 |
 |---|---|
-| 源码目录 | `C:\Users\li_jie\.dsh\dsh-local-bundles\dsh-study-mode` |
-| 打包好的 tgz | `C:\Users\li_jie\.dsh\dsh-local-bundles\dsh-study-mode\dist\dsh-community-dsh-study-mode-2.1.0.tgz` |
+| 源码目录 | `%USERPROFILE%\.dsh\dsh-local-bundles\dsh-study-mode` |
+| 打包好的 tgz | `%USERPROFILE%\.dsh\dsh-local-bundles\dsh-study-mode\dist\dsh-community-dsh-study-mode-2.2.1.tgz` |
 | 已推到 GitHub 的仓库 | `https://github.com/<你的用户名>/dsh-study-mode` |
 
 它会调用 `plugin_manager` 的 `install_bundle`，自动完成：pnpm 安装 → 写入 profile 的 `dsh.profile.bundles` → 应用 bundle patch。
@@ -40,10 +40,10 @@
 
 ```bash
 # 从本地路径或 tgz
-dsh plugin --profile desktop add "C:/Users/li_jie/.dsh/dsh-local-bundles/dsh-study-mode/dist/dsh-community-dsh-study-mode-2.1.0.tgz"
+dsh plugin --profile desktop add "<你的 DSH_HOME>/dsh-local-bundles/dsh-study-mode/dist/dsh-community-dsh-study-mode-2.2.1.tgz"
 
 # 或从 GitHub
-dsh plugin --profile desktop add github:<你的用户名>/dsh-study-mode
+dsh plugin --profile desktop add github:Mashiro-Neri/dsh-study-mode
 ```
 
 `desktop` 换成你自己的 profile 名。装完同样要完整重启。
@@ -57,11 +57,11 @@ dsh plugin --profile desktop add github:<你的用户名>/dsh-study-mode
 1. **把包链接进 profile 的 `node_modules`**
 
    ```powershell
-   $profile = "C:\Users\li_jie\.dsh\profiles\desktop"
+   $profile = "$env:USERPROFILE\.dsh\profiles\desktop"
    $scopeDir = Join-Path $profile "node_modules\@dsh-community"
    New-Item -ItemType Directory -Path $scopeDir -Force | Out-Null
    New-Item -ItemType Junction -Path (Join-Path $scopeDir "dsh-study-mode") `
-            -Target "C:\Users\li_jie\.dsh\dsh-local-bundles\dsh-study-mode"
+            -Target "$env:USERPROFILE\.dsh\dsh-local-bundles\dsh-study-mode"
    ```
 
 2. **在 `<profile>\package.json` 里登记两处**
@@ -78,7 +78,7 @@ dsh plugin --profile desktop add github:<你的用户名>/dsh-study-mode
        }
      },
      "dependencies": {
-       "@dsh-community/dsh-study-mode": "link:C:/Users/li_jie/.dsh/dsh-local-bundles/dsh-study-mode"
+       "@dsh-community/dsh-study-mode": "link:<你的 DSH_HOME>/dsh-local-bundles/dsh-study-mode"
      }
    }
    ```
@@ -110,6 +110,7 @@ dsh plugin --profile desktop add github:<你的用户名>/dsh-study-mode
 - **没有 `pwsh` / `bash` / `jobs`，也没有 `write` / `edit`**——搭骨架、装依赖、代跑代码、写文件在物理上做不到（`tool-fs` 的 `write` / `edit` 开关是关掉的，工具根本不注册）
 - 一个只读的练习员子代理 `subagent_practice`：只有上面那六个读类工具，没有 `ask_user_question`、没有委派工具
 - 学科题默认逐步引导：拆步、一次只推进一步，他做一步你判一步；卡点类型决定提示形态
+- 联网核对资料：公式/定理/API/教材/评分标准（给链接与原文；不搜原题答案、不转述网上解法；网页内容只当资料）
 - 上下文压缩（`/compact` 与工具结果修剪），长练习会话不会一路涨到装不下
 
 **七个技能**随包分发：
@@ -152,7 +153,7 @@ node scripts/check-bundle.cjs
 |---|---|
 | `tool-subagent: ... is no longer supported` | 委派工具里还在配 `persona` 这类 0.2.1 已删字段——说明 patch 被改回了旧写法，或装的是旧版本的包 |
 | `Preset services require isolate realms: ...` | preset 里自挂了会提供 service 的行（本包不该再挂子 agent 运行时或 shell 执行器）；对照 `cordis.patch.yml` 的现写法恢复 |
-| `Cannot find module '@deepseek-ai/dsh-...'` | 宿主版本与 preset 里的插件行对不上：先确认 DSH ≥ 0.2.1-rc.2，且装的是 2.1.0 的包 |
+| `Cannot find module '@deepseek-ai/dsh-...'` | 宿主版本与 preset 里的插件行对不上：先确认 DSH ≥ 0.2.1-rc.2，且装的是 2.2.1 的包 |
 | 卡片正常但 `skill` 调用报 `unknown or no longer available` | 技能目录没解析出来，见下一条 |
 
 ### 练习员的错误看不到（隐藏 preset）
@@ -200,7 +201,7 @@ node scripts/check-bundle.cjs
 powershell -ExecutionPolicy Bypass -File scripts/build-package.ps1
 
 # 发布（含真机验证，需要 DSH_RUNTIME）
-powershell -ExecutionPolicy Bypass -File scripts/release.ps1 -Version 2.1.0
+powershell -ExecutionPolicy Bypass -File scripts/release.ps1 -Version 2.2.1
 ```
 
 改完之后：**结构变化**（preset 的插件行、persona、技能增删、花名册补丁）需要重启 DSH 生效；**技能正文**是改完就热加载的。宿主升级后先跑 `node scripts/check-host-contract.mjs --runtime <解包运行时>`。

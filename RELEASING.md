@@ -43,14 +43,19 @@ $env:DSH_RUNTIME = "C:\path\to\extracted-dsh-runtime"
 
 ## 署名
 
-**提交人固定是 DeepSeek**，不是仓库所有者。仓库本地的 git 身份已经设好：
+提交人固定是**仓库所有者** `Mashiro-Neri <MashiroNeri@outlook.com>`。仓库本地 git 身份：
 
 ```bash
-git config user.name  "DeepSeek"
-git config user.email "noreply@deepseek.com"
+git config user.name  "Mashiro-Neri"
+git config user.email "MashiroNeri@outlook.com"
 ```
 
-Release 正文只由日志段落组成，不加额外的署名行。
+发布前确认 `git log -1 --format='%an <%ae>'`，别把提交推成别的身份。Release 正文只由日志段落组成，不加额外的署名行。
+
+## npm 发布（可选）
+
+`package.json` 保留着 `"private": true`，它**只阻止 `npm publish`**，与 GitHub Release 无关。
+确实要发 npm 时，先确认 scope 归属，再去掉这个标记；不发 npm 就保持原样。
 
 ## 版本号怎么定
 

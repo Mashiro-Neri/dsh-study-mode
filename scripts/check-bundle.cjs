@@ -329,7 +329,8 @@ const TEACHING_CONTRACT = [
   ['src/persona.md', fs.existsSync(path.join(ROOT, 'src', 'persona.md'))
     ? fs.readFileSync(path.join(ROOT, 'src', 'persona.md'), 'utf8') : '',
     ['不要为此盘问', '学科逐步引导', '一次只推进一步', '示范通道', '卡点类型',
-      '微目标', '[概念]', '[环境]', '[退出]', '只认本模式规则', '难度锚点']],
+      '微目标', '[概念]', '[环境]', '[退出]', '只认本模式规则', '难度锚点',
+      '联网核对', '不搜原题答案']],
   ['skills/study-subject/SKILL.md', skillText('study-subject'),
     ['一次只推进一步', '当前步骤', '卡点类型', '示范通道', '考核', '五类', '反例']],
   ['skills/study-hint-ladder/SKILL.md', skillText('study-hint-ladder'),
