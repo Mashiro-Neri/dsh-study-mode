@@ -18,12 +18,14 @@ As a DSH mode there's an extra layer: **there is no shell, and no `write` / `edi
 
 Two agent presets, declared by a bundle patch (`cordis.patch.yml`): the main Study Mode, plus the internal `study-practice` agent it delegates to. Identity, toolset and sub-agent are composed when the session is created; the practice preset never shows up in the mode picker.
 
+The default learner is a student working through **schoolwork**: maths, physics and chemistry problems go through the step-by-step protocol (decompose, one step per turn); programming keeps the original flow.
+
 **The prompt lands in three layers:**
 
 | Layer | Contents | How it applies |
 |---|---|---|
-| Standing identity | Role, priority, bottom-line clause, level marker, fixed flow, the ladder, hard bans, pressure handling, the exit switch, a pre-send self-check | persona, **present on every request**, ~4,300 characters |
-| On-demand detail | Seven skills: ladder detail, concept coaching, debug coaching, review & progress, practice-agent protocol, maths, writing | loaded by the model only when needed |
+| Standing identity | Role, priority, bottom-line clause, level marker, fixed flow, the ladder, hard bans, pressure handling, the exit switch, a pre-send self-check | persona, **present on every request**, ~6,800 characters |
+| On-demand detail | Eight skills: ladder detail, concept coaching, code debug coaching, review & progress, practice-agent protocol, subject step-by-step, maths/sciences, writing | loaded by the model only when needed |
 | Structural constraint | Toolset: **no shell and no `write` / `edit`**; the practice agent additionally has no `ask_user_question` and no delegation tools | fixed at session creation |
 
 ## Levels and the ladder
@@ -41,6 +43,21 @@ The single release valve is "exit study mode": say it explicitly, confirm once, 
 
 For work that must be done independently (a test, a quiz), the ceiling drops to L2 and the exit switch is not offered.
 
+## Subject problems: step by step (new in 2.1)
+
+For schoolwork — maths, physics, chemistry, biology — the mode does **not** explain the whole solution. It decomposes the problem and advances **one step at a time**:
+
+> Coach: what does the problem ask for? What do you think the first step is?
+> Learner: find the acceleration… force analysis first?
+> Coach: right, force analysis. Which forces, and which object?
+> Learner: (states object and forces)
+> Coach: the object is right. One force is missing — check what else touches this body.
+> Coach: that step is done. What's the next step?
+
+Rules: he does a step, you judge that step, then ask for the next one; the L0–L3 ladder is used **inside** a step and only for the current step. The whole solution appears in exactly two places: the exit switch, or the demo channel (an analogous problem, same technique, neutral naming, followed by a faded practice — never the original problem).
+
+Each list entry carries a **micro-objective**, the **current step**, the level and the **stuck-point type**, so a compacted long session can pick up where it left off; the wrap-up reports the distribution of stuck-point types.
+
 ## The practice contract
 
 Hand it several problems at once and it opens a **practice list for the day** with `todo_write`: number, one-line topic, status. It asks which one you want to start with, then advances exactly one at a time. After each one it asks where you got stuck and what clicked, and compresses your answer into a few words appended to that entry. When everything is done it offers a short wrap-up (which ones went smoothly, which kind of step the sticking points clustered in).
@@ -55,23 +72,25 @@ Three deliberate choices:
 
 One mode (plus an internal practice preset that never appears in the mode picker):
 
-- A standing rule set (~5,000 characters per request)
+- A standing rule set (~6,800 characters per request)
 - Tools: `read` / `read_image` / `glob` / `grep` / `web_search` / `web_fetch` / `ask_user_question` / `skill` / `todo_write` plus sub-agent control (`send_message` / `interrupt_agent` / `list_agents`)
 - **No** `pwsh` / `bash` / `jobs`, and **no** `write` / `edit`
 - One read-only practice sub-agent (a separate preset, hidden from the mode picker by the roster shim)
+- Subject step-by-step protocol: decomposition, one step at a time, stuck-point → hint-shape mapping, demo channel
 - Context compaction, so a long practice session doesn't grow until it overflows
 
-Seven skills ship inside the bundle and are discovered through `skill-filesystem`'s `customSkillDirs`, with the path resolved from the bundle's own location:
+Eight skills ship inside the bundle and are discovered through `skill-filesystem`'s `customSkillDirs`, with the path resolved from the bundle's own location:
 
 | Skill | Purpose |
 |---|---|
-| `study-hint-ladder` | What each of L0–L3 may give, how to blank a skeleton, what counts as overstepping, when to raise or lower a level |
+| `study-hint-ladder` | What each of L0–L3 may give, how to blank a skeleton, what counts as overstepping, when to raise or lower a level, stuck-point → hint-shape mapping |
 | `study-concept-coaching` | Teaching a concept outright, verifying real understanding with 1–2 short checks, and not leaking the problem at hand |
-| `study-debug-coaching` | The three opening questions, guiding them to read their own error, where "explain the error" ends and "give the fix" begins, reviewing without rewriting |
-| `study-review-checklist` | When a review is actually warranted, how short it should be, the practice contract (opening the list, recording sticking points, when to offer a wrap-up), resetting between problems |
-| `study-practice-subagent` | When to dispatch the practice agent, how to write the task, its timing constraint, and how to enforce "its output must never cover the original problem" |
-| `study-subject-math` | Maths: breaking a problem into givens/goal/transformation, a maths-shaped ladder (L3 is a derivation chain with blanks), the five common failure points, counter-example thinking |
-| `study-subject-writing` | Essays and text work: the hard rule that **not one complete sentence may be supplied**, breaking the task into claim/structure/evidence, a writing-shaped ladder (L3 is a blank outline), reviewing the learner's own prose |
+| `study-debug-coaching` | The three opening questions for programming problems, guiding them to read their own error, reviewing without rewriting |
+| `study-review-checklist` | When a review is actually warranted, how short it should be, the practice contract (list, state and stuck-point types), resetting between problems |
+| `study-practice-subagent` | When to dispatch the practice agent, how to write the task, variant quality gates, timing, and enforcing "its output must never cover the original problem" |
+| **`study-subject-stepwise`** | **The step-by-step protocol for subject problems: decomposition, one step per turn, what to ask each step, when the ladder applies, when a full solution is allowed** |
+| `study-subject-math` | Maths/physics/chemistry: givens/goal/transformation, a derivation-chain L3, the five common failure points, counter-example thinking |
+| `study-subject-writing` | Essays and text work: the hard rule that **not one complete sentence may be supplied**, claim/structure/evidence, a blank-outline L3, reviewing the learner's own prose |
 
 The subject skills only swap out what a clue or a skeleton looks like; they do not override the bottom line or the process. Adding a subject means adding one directory under `skills/` — no preset change.
 
@@ -115,7 +134,7 @@ Built artifacts live in `dist/`:
 
 **The two artifacts serve different purposes.** The `.tgz` is what DSH's `plugin_manager` consumes; the `.zip` is the human-facing bundle — unzip it and you have the source, the docs and working build scripts, no clone required. The tarball inside the zip matches its own bundled `.sha256`.
 
-The zip holds 32 files (counting rule: one clean rebuild — `build-package.ps1` then `build-zip.ps1`: 30 files from the repository source tree plus the tarball and its sha256 in `dist/`; the zip being generated is not inside itself, and `.git` / `node_modules` are excluded):
+The zip holds 33 files (counting rule: one clean rebuild — `build-package.ps1` then `build-zip.ps1`: 31 files from the repository source tree plus the tarball and its sha256 in `dist/`; the zip being generated is not inside itself, and `.git` / `node_modules` are excluded):
 
 ```
 dsh-study-mode-2.0.0/
@@ -123,7 +142,7 @@ dsh-study-mode-2.0.0/
 ├── cordis.patch.yml       generated composition patch
 ├── package.json
 ├── plugin/                roster shim (hides healthy internal presets)
-├── skills/                the seven skills
+├── skills/                the eight skills
 ├── docs/                  original prompt + mapping table
 ├── scripts/               render, self-check, contract snapshot, verification, build
 ├── dist/                  build artifacts (tarball + checksum)
@@ -136,7 +155,7 @@ The package is `@dsh-community/dsh-study-mode`, declares `dsh.bundle.patch = ./c
 ```
 package/cordis.patch.yml         the preset declarations
 package/plugin/hide-internal-presets.js  the roster shim
-package/skills/…/SKILL.md        the seven skills
+package/skills/…/SKILL.md        the eight skills
 package/docs/source-prompt.zh.md the original prompt, for diffing against
 package/README.md, README.zh.md, INSTALL.zh.md, CHANGELOG.md, LICENSE
 ```
@@ -159,7 +178,7 @@ package/README.md, README.zh.md, INSTALL.zh.md, CHANGELOG.md, LICENSE
 
 **`send_message` has a timing constraint**: you cannot deliver while the practice agent is running — it returns `subagent "<id>" is unavailable`. Not a failure; wait for the round to finish.
 
-**The standing rules ride on every request**, around 5,000 characters. The tradeoff is that the bottom line and the process skeleton must always be present, while detail loads on demand.
+**The standing rules ride on every request**, around 6,800 characters (up from ~5,200 in 2.0 because of the step-by-step protocol, demo channel and state bookkeeping). The tradeoff is that the bottom line and the process skeleton must always be present, while detail loads on demand.
 
 **The "Agent Teams" plugin no longer has to be off.** Since 0.2.1 a same-named tool registered in the preset scope shadows the global one: this mode's `send_message` takes `agent_id`, the teams version takes `target`, so the parameter name tells you which one you got.
 
@@ -190,7 +209,7 @@ powershell -ExecutionPolicy Bypass -File scripts/build-zip.ps1
 powershell -ExecutionPolicy Bypass -File scripts/release.ps1 -Version 2.0.0
 ```
 
-`check-bundle.cjs` checks ten things: both presets exist with the child declared before the main one; the delegation row points at `study-practice` and carries no fields the Host removed in 0.2.1; no self-mounted subagent runtime or shell row crept in; both `tool-fs` rows disable `write` / `edit`; the practice preset's tool surface is exactly the rows it should have; the main persona keeps its behavioural markers and skill routes; every skill's frontmatter is valid and **at least one `customSkillDirs` candidate resolves from the profile to a `skills/` directory that actually exists** (it throws when none does); the roster shim exists and lists the practice preset; **`cordis.patch.yml` is in sync with the `src/` sources**; and the package manifest's `files` allowlist ships everything the patch references. It has no external dependencies, so it runs without installing anything.
+`check-bundle.cjs` checks eleven things: both presets exist with the child declared before the main one; the delegation row points at `study-practice` and carries no fields the Host removed in 0.2.1; no self-mounted subagent runtime or shell row crept in; both `tool-fs` rows disable `write` / `edit`; the practice preset's tool surface is exactly the rows it should have; the main persona keeps its behavioural markers and skill routes; every skill's frontmatter is valid and **at least one `customSkillDirs` candidate resolves from the profile to a `skills/` directory that actually exists** (it throws when none does); the roster shim exists and lists the practice preset; **`cordis.patch.yml` is in sync with the `src/` sources**; **the teaching-contract clauses** ("no assessment interrogation", "subject step-by-step", "demo channel", "stuck-point type", "micro-objective", …) still exist in the persona/skills; and the package manifest's `files` allowlist ships everything the patch references. It has no external dependencies, so it runs without installing anything.
 
 That skill-directory check is worth running every time: get the package name wrong and the preset still "loads", but the skill directory is **silently empty** — the failure only surfaces when `skill` is actually called. The resolver now throws instead, so the problem shows up at preset load time.
 
@@ -212,12 +231,13 @@ Structural changes need a DSH restart; skill bodies hot-reload. Release steps li
 │   └── hide-internal-presets.js  filters healthy internal presets out of the mode picker
 ├── CHANGELOG.md            release notes
 ├── RELEASING.md            release process
-├── skills/                 the seven skills
+├── skills/                 the eight skills
 │   ├── study-concept-coaching/
 │   ├── study-debug-coaching/
 │   ├── study-hint-ladder/
 │   ├── study-practice-subagent/
 │   ├── study-review-checklist/
+│   ├── study-subject-stepwise/
 │   ├── study-subject-math/
 │   └── study-subject-writing/
 ├── docs/

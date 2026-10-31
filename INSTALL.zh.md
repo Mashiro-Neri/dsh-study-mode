@@ -2,7 +2,7 @@
 
 给 DSH（DeepSeek Harness）装「学习模式」。装完的结果是：设置 →「模式」里多一张「学习模式」卡片，新建会话时可以选它。（只多这一张——内部的练习员 preset 被花名册补丁隐藏，不会出现在模式列表里。）
 
-包名：`@dsh-community/dsh-study-mode` ｜ 版本：`2.0.0`
+包名：`@dsh-community/dsh-study-mode` ｜ 版本：`2.1.0`
 
 ---
 
@@ -27,7 +27,7 @@
 | 你手上有什么 | 填什么 |
 |---|---|
 | 源码目录 | `C:\Users\li_jie\.dsh\dsh-local-bundles\dsh-study-mode` |
-| 打包好的 tgz | `C:\Users\li_jie\.dsh\dsh-local-bundles\dsh-study-mode\dist\dsh-community-dsh-study-mode-2.0.0.tgz` |
+| 打包好的 tgz | `C:\Users\li_jie\.dsh\dsh-local-bundles\dsh-study-mode\dist\dsh-community-dsh-study-mode-2.1.0.tgz` |
 | 已推到 GitHub 的仓库 | `https://github.com/<你的用户名>/dsh-study-mode` |
 
 它会调用 `plugin_manager` 的 `install_bundle`，自动完成：pnpm 安装 → 写入 profile 的 `dsh.profile.bundles` → 应用 bundle patch。
@@ -40,7 +40,7 @@
 
 ```bash
 # 从本地路径或 tgz
-dsh plugin --profile desktop add "C:/Users/li_jie/.dsh/dsh-local-bundles/dsh-study-mode/dist/dsh-community-dsh-study-mode-2.0.0.tgz"
+dsh plugin --profile desktop add "C:/Users/li_jie/.dsh/dsh-local-bundles/dsh-study-mode/dist/dsh-community-dsh-study-mode-2.1.0.tgz"
 
 # 或从 GitHub
 dsh plugin --profile desktop add github:<你的用户名>/dsh-study-mode
@@ -94,9 +94,10 @@ dsh plugin --profile desktop add github:<你的用户名>/dsh-study-mode
 1. 设置 →「模式」，应能看到**「学习模式」**卡片，卡片上没有红色「加载失败」标记。模式列表里**只多出这一张**——内部的练习员 preset 被花名册补丁隐藏了，不会出现在选择器里。
 2. 新建会话，在欢迎页的模式选择里选「学习模式」。
    **必须在发第一条消息之前选**——会话的模式在创建时定型，中途改不了。
-3. 发一句话试试，比如 `什么是递归？`。应该看到回复以 `[L0]` 或 `[L1]` 开头，并且**不直接给答案**。
+3. 发一道**学科题**试试，比如 `解方程 x²-5x+6=0`。应该看到它先拆步、一次只问一步（"这题要求什么？你打算先做哪一步？"），**不直接给解**。
+4. 也可以发一句 `什么是递归？`：概念题直接讲，回复以 `[概念]` 开头。
 
-想让它成为新会话默认模式，在 设置 →「模式」里设默认。平时主要写代码的话建议还是留在标准模式。
+想让它成为新会话默认模式，在 设置 →「模式」里设默认。做学科作业或刷题时用它；平时主要写代码、跑命令的话建议还是留在标准模式。
 
 ---
 
@@ -104,15 +105,16 @@ dsh plugin --profile desktop add github:<你的用户名>/dsh-study-mode
 
 **一个模式**（preset id `study`，显示名「学习模式」，排序 5），外加一个只在内部使用、不占模式列表的练习员 preset（`study-practice`，排序 51，被花名册补丁隐藏）：
 
-- 常驻规则约 5000 字/请求（身份、底线条款、L0–L3 阶梯、固定流程、练习契约、发送前自检）
+- 常驻规则约 6800 字/请求（身份、底线条款、L0–L3 阶梯、学科逐步引导、示范通道、固定流程、练习契约、发送前自检）
 - 工具面：`read` / `read_image` / `glob` / `grep` / `web_search` / `web_fetch` / `ask_user_question` / `skill` / `todo_write` + 子代理控制工具（`send_message` / `interrupt_agent` / `list_agents`）
 - **没有 `pwsh` / `bash` / `jobs`，也没有 `write` / `edit`**——搭骨架、装依赖、代跑代码、写文件在物理上做不到（`tool-fs` 的 `write` / `edit` 开关是关掉的，工具根本不注册）
 - 一个只读的练习员子代理 `subagent_practice`：只有上面那六个读类工具，没有 `ask_user_question`、没有委派工具
+- 学科题默认逐步引导：拆步、一次只推进一步，他做一步你判一步；卡点类型决定提示形态
 - 上下文压缩（`/compact` 与工具结果修剪），长练习会话不会一路涨到装不下
 
-**七个技能**随包分发：
+**八个技能**随包分发：
 
-`study-hint-ladder`（阶梯细则）、`study-concept-coaching`（概念讲解）、`study-debug-coaching`（调试引导）、`study-review-checklist`（复盘与练习契约）、`study-practice-subagent`（练习员规程）、`study-subject-math`（数学类）、`study-subject-writing`（写作类）
+`study-hint-ladder`（阶梯与卡点类型映射）、`study-concept-coaching`（概念讲解）、`study-debug-coaching`（编程调试引导）、`study-review-checklist`（复盘与练习契约）、`study-practice-subagent`（练习员规程与质量门）、`study-subject-stepwise`（学科逐步引导协议）、`study-subject-math`（数理化推理）、`study-subject-writing`（写作类）
 
 ---
 
@@ -124,7 +126,7 @@ plugin_manager
   target: @dsh-community/dsh-study-mode
 ```
 
-七个技能和两个 preset（含隐藏的练习员）跟着一起移除，不用另外清理。手工安装的话，把 `<profile>\package.json` 里那两处条目删掉、重启即可。
+八个技能和两个 preset（含隐藏的练习员）跟着一起移除，不用另外清理。手工安装的话，把 `<profile>\package.json` 里那两处条目删掉、重启即可。
 
 ---
 
@@ -142,7 +144,7 @@ node scripts/check-bundle.cjs
 
 模式列表**只显示能正常加载的模式**，加载失败会静默消失，不会有任何提示。
 
-去 设置 →「模式」页看那张卡片。如果卡片是红的、带「加载失败」标记，鼠标悬停上去能看到真正的原因。**这是 UI 上唯一能看到错误信息的地方**；内部练习员 preset 的错误不会显示在这里，见下一节。
+去 设置 →「模式」页看那张卡片。如果卡片是红的、带「加载失败」标记，鼠标悬停上去能看到真正的原因。**这是 UI 上唯一能看到错误信息的地方**；内部练习员 preset 坏了也会以红卡形式出现在这里（花名册补丁只隐藏健康的内部 preset）。
 
 常见原因：
 
@@ -150,12 +152,12 @@ node scripts/check-bundle.cjs
 |---|---|
 | `tool-subagent: ... is no longer supported` | 委派工具里还在配 `persona` 这类 0.2.1 已删字段——说明 patch 被改回了旧写法，或装的是旧版本的包 |
 | `Preset services require isolate realms: ...` | preset 里自挂了会提供 service 的行（本包不该再挂子 agent 运行时或 shell 执行器）；对照 `cordis.patch.yml` 的现写法恢复 |
-| `Cannot find module '@deepseek-ai/dsh-...'` | 宿主版本与 preset 里的插件行对不上：先确认 DSH ≥ 0.2.1-rc.2，且装的是 2.0.0 的包 |
+| `Cannot find module '@deepseek-ai/dsh-...'` | 宿主版本与 preset 里的插件行对不上：先确认 DSH ≥ 0.2.1-rc.2，且装的是 2.1.0 的包 |
 | 卡片正常但 `skill` 调用报 `unknown or no longer available` | 技能目录没解析出来，见下一条 |
 
 ### 练习员的错误看不到（隐藏 preset）
 
-练习员是独立的子级 preset（`study-practice`），被花名册补丁隐藏了：它加载失败时模式列表里不会出现红卡。去宿主日志里搜 `agent preset study-practice:`，那一行就是真正的原因；改完结构先跑 `node scripts/check-bundle.cjs` 通常能提前发现。
+练习员是独立的子级 preset（`study-practice`），花名册补丁只隐藏**健康**的内部 preset：它加载失败时会在模式列表里显示红卡、带错误原文；同时宿主日志里会有 `agent preset study-practice:` 一行。改完结构先跑 `node scripts/check-bundle.cjs` 通常能提前发现。
 
 ### 技能加载不出来
 
@@ -185,15 +187,23 @@ git config --global http.sslBackend schannel
 
 ## 自己改和重新打包
 
+persona 与组合结构由 `src/` 生成，不要手改 `cordis.patch.yml`：
+
 ```powershell
-# 结构自检（preset 引用、结构只读、技能、花名册隐藏、包清单）
+# 改完 src/ 后重新生成 cordis.patch.yml
+node scripts/build-patch.mjs
+
+# 结构自检（preset、结构只读、技能、花名册隐藏、教学契约、包清单）
 node scripts/check-bundle.cjs
 
 # 打包成 dist/*.tgz + SHA256（会先跑上面的自检，并检查 plugin/ 是否存在）
 powershell -ExecutionPolicy Bypass -File scripts/build-package.ps1
+
+# 发布（含真机验证，需要 DSH_RUNTIME）
+powershell -ExecutionPolicy Bypass -File scripts/release.ps1 -Version 2.1.0
 ```
 
-改完之后：**结构变化**（preset 的插件行、persona、技能增删、花名册补丁）需要重启 DSH 生效；**技能正文**是改完就热加载的。
+改完之后：**结构变化**（preset 的插件行、persona、技能增删、花名册补丁）需要重启 DSH 生效；**技能正文**是改完就热加载的。宿主升级后先跑 `node scripts/check-host-contract.mjs --runtime <解包运行时>`。
 
 ---
 

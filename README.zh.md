@@ -16,12 +16,14 @@
 
 两条 agent preset，由组合包的补丁（`cordis.patch.yml`）声明：主模式「学习模式」，以及它内部委派用的练习员 `study-practice`。身份、工具面、子代理都在会话创建时组装好；练习员不出现在模式选择器里。
 
+默认使用者是**做学科作业的学生**：数学、物理、化学等题目走「逐步引导」——拆步，一次只推进一步；编程题按原有流程。
+
 **提示词分三层落地**：
 
 | 层 | 内容 | 生效方式 |
 |---|---|---|
-| 常驻身份层 | 身份、优先级、底线条款、级别标记、固定流程、阶梯分级、绝不允许、施压应对、退出开关、发送前自检 | persona，**每个请求都在场**，约 5000 字 |
-| 按需细则层 | 七个技能：阶梯细则、概念讲解、调试引导、复盘与进度、练习员规程、数学类、写作类 | 用到才由模型加载 |
+| 常驻身份层 | 身份、优先级、底线条款、级别标记、固定流程、阶梯分级、绝不允许、施压应对、退出开关、发送前自检 | persona，**每个请求都在场**，约 6800 字 |
+| 按需细则层 | 八个技能：阶梯细则、概念讲解、调试引导、复盘与进度、练习员规程、学科逐步引导、数理化、写作 | 用到才由模型加载 |
 | 结构约束层 | 工具面：**没有 shell，也没有 `write` / `edit`**；练习员另外没有 `ask_user_question`、没有委派工具 | 会话创建时定型 |
 
 ## 级别与阶梯
@@ -39,6 +41,21 @@
 
 如果是被要求独立完成的考核或随堂测，上限压到 L2，且不提供退出开关。
 
+## 学科题：逐步引导（2.1 新增）
+
+数学、物理、化学、生物这类作业，默认**不是**把整题思路讲一遍，而是拆成步骤、**一次只推进一步**：
+
+> 你：这题要求什么？你觉得第一步该先做什么？
+> 他：求加速度……先受力分析？
+> 你：对，先受力分析。这一步你打算画哪些力、以谁为对象？
+> 他：（说出对象与力）
+> 你：对象选对了。少了一个力——检查一下这个物体和周围还有哪些接触。
+> 你：这一步过了。下一步该做什么？
+
+规则：他做一步、你判一步，通过了再问下一步；某一步卡住才用 L0–L3，而且提示只作用于**当前这一步**。整题思路只在两个地方出现：你说了【退出学习模式】，或走【示范通道】（异题、同技法、中性命名的小示范 + 淡出练习，严禁覆盖原题）。
+
+清单里每条会带**微目标**（这题在练什么）、**当前步骤**、**级别**和**卡点类型**，长会话压缩后也能接上；全部做完的小结会给"卡点类型分布"。
+
 ## 练习契约
 
 一次给多道题时，它会用 `todo_write` 立一份**今日练习清单**：题号 + 一句话题干 + 状态，问你想从哪道开始，然后一次只推进一道。每道做完，它问你"卡在哪、现在觉得哪里通了"，把你的话压成几个字记在那一条后面。全部完成后问你要不要小结（哪几道顺、卡点集中在哪一类环节）。
@@ -53,23 +70,25 @@
 
 一个模式（外加一个只在内部使用、不占模式列表的练习员 preset）：
 
-- 常驻的规则说明（约 5000 字/请求）
+- 常驻的规则说明（约 6800 字/请求）
 - 工具面：`read` / `read_image` / `glob` / `grep` / `web_search` / `web_fetch` / `ask_user_question` / `skill` / `todo_write` + 子代理控制工具（`send_message` / `interrupt_agent` / `list_agents`）
 - **没有** `pwsh` / `bash` / `jobs`，**也没有** `write` / `edit`
 - 一个只读的练习员子代理（独立 preset，被花名册补丁从模式选择器里隐藏）
+- 学科逐步引导协议：拆步、一次一步、卡点类型映射、示范通道
 - 上下文压缩：长练习会话不会一路涨到装不下
 
-七个技能随包分发，通过 `skill-filesystem` 的 `customSkillDirs` 发现，路径在加载时从本包位置解析：
+八个技能随包分发，通过 `skill-filesystem` 的 `customSkillDirs` 发现，路径在加载时从本包位置解析：
 
 | 技能 | 作用 |
 |---|---|
-| `study-hint-ladder` | L0–L3 每级到底能给什么、骨架怎么留空、什么算越界、升格降格条件 |
+| `study-hint-ladder` | L0–L3 每级到底能给什么、骨架怎么留空、什么算越界、升格降格条件、卡点类型 → 提示形态映射 |
 | `study-concept-coaching` | 概念题怎么直接讲透、讲完怎么用 1-2 个小问题验证真懂了、怎么不泄露他手上的题 |
-| `study-debug-coaching` | 调试三连问、带他自己读报错、报错解释与"指出大致环节"的边界、代码评审只指问题不代改 |
-| `study-review-checklist` | 什么时候才该复盘、复盘说多少、练习契约（清单怎么立、卡点怎么记、小结什么时候给）、换题复位 |
-| `study-practice-subagent` | 练习员什么时候派、派活消息怎么写、时序限制、以及"产物不得覆盖原题"怎么执行 |
-| `study-subject-math` | 数学题：按"条件/目标/转化"拆题意、数学版阶梯（L3 是留空推导链）、五类高频错误环节的定位问法、反例思维 |
-| `study-subject-writing` | 作文与文本类："一个完整句子都不能给"这条硬边界、按"主张—结构—论据"拆解、写作版阶梯（L3 是留空提纲）、怎么评审他已有的文字 |
+| `study-debug-coaching` | 编程题的调试三连问、带他自己读报错、代码评审只指问题不代改 |
+| `study-review-checklist` | 什么时候才该复盘、复盘说多少、练习契约（清单怎么立、状态与卡点类型怎么记）、换题复位 |
+| `study-practice-subagent` | 练习员什么时候派、派活消息怎么写、变体质量门、时序限制、"产物不得覆盖原题"怎么执行 |
+| **`study-subject-stepwise`** | **学科题逐步引导协议：拆步、一次只推进一步、每步先问什么、卡住怎么用阶梯、整题思路什么时候才能讲** |
+| `study-subject-math` | 数理化：按"条件/目标/转化"拆题意、L3 留空推导链、五类高频错误环节的定位问法、反例思维 |
+| `study-subject-writing` | 作文与文本类："一个完整句子都不能给"这条硬边界、按"主张—结构—论据"拆解、写作版 L3 提纲 |
 
 后面的学科技能只替换"线索和骨架长什么样"，不覆盖底线与流程。加新科目就是往 `skills/` 里加一个目录，不用动 preset。
 
@@ -113,7 +132,7 @@
 
 **两个产物的用途不同**：`.tgz` 是给 DSH 的 `plugin_manager` 吃的安装包；`.zip` 是给人看的整包——拿到就能读源码、看文档、直接跑打包脚本，不需要另外去 clone。zip 里的 tgz 校验值与它自带的 `.sha256` 一致。
 
-zip 里共 32 个文件（口径：一次干净的重新打包——先 `build-package.ps1` 再 `build-zip.ps1`：仓库源码树 30 个文件 + `dist/` 里的 tgz 与它的 sha256；不含正在生成的 zip 本身，也不含 `.git` / `node_modules` 这类被排除项）：
+zip 里共 33 个文件（口径：一次干净的重新打包——先 `build-package.ps1` 再 `build-zip.ps1`：仓库源码树 31 个文件 + `dist/` 里的 tgz 与它的 sha256；不含正在生成的 zip 本身，也不含 `.git` / `node_modules` 这类被排除项）：
 
 ```
 dsh-study-mode-2.0.0/
@@ -121,7 +140,7 @@ dsh-study-mode-2.0.0/
 ├── cordis.patch.yml        由 src/ 生成的组合补丁
 ├── package.json
 ├── plugin/                 花名册补丁（隐藏健康的练习员 preset）
-├── skills/                 七个技能
+├── skills/                 八个技能
 ├── docs/                   原始提示词 + 对照表
 ├── scripts/                生成、自检、契约快照、真机验证与打包脚本
 ├── dist/                   打包产物（tgz 及其校验值）
@@ -134,7 +153,7 @@ dsh-study-mode-2.0.0/
 ```
 package/cordis.patch.yml          preset 声明
 package/plugin/hide-internal-presets.js  花名册补丁
-package/skills/…/SKILL.md         七个技能
+package/skills/…/SKILL.md         八个技能
 package/docs/source-prompt.zh.md  原始提示词（改动时可对照）
 package/README.md, README.zh.md, INSTALL.zh.md, CHANGELOG.md, LICENSE
 ```
@@ -157,7 +176,7 @@ package/README.md, README.zh.md, INSTALL.zh.md, CHANGELOG.md, LICENSE
 
 **`send_message` 有时序限制**：练习员正在跑的时候投递不过去，会报 `subagent "<id>" is unavailable`。这不是出错，等它这一轮结束再发。
 
-**常驻规则约 5000 字/请求**，是有成本的。取舍理由是底线与流程骨架必须一直在场，细则才按需加载。
+**常驻规则约 6800 字/请求**，是有成本的（2.1 因为学科逐步引导、示范通道、状态记账从约 5200 字涨上来）。取舍理由是底线与流程骨架必须一直在场，细则才按需加载。
 
 **「智能体团队」插件不用再关了。** 0.2.1 起 preset 作用域里注册的同名工具会覆盖全局版本：本模式的 `send_message` 参数是 `agent_id`，团队版是 `target`，看参数名就能分清。
 
@@ -188,7 +207,7 @@ powershell -ExecutionPolicy Bypass -File scripts/build-zip.ps1
 powershell -ExecutionPolicy Bypass -File scripts/release.ps1 -Version 2.0.0
 ```
 
-`check-bundle.cjs` 检查十类事：两个 preset 是否存在且子级先于主级声明；委派行是否指向 `study-practice`、是否还残留宿主 0.2.1 已删除的旧字段；有没有混进自挂的子 agent 运行时或 shell 行；两个 `tool-fs` 行是否都关掉了 `write` / `edit`；练习员的工具面是否恰好只有它该有的那几行；主 persona 的行为标记与技能路由是否齐全；每个技能的 frontmatter 是否合法、`customSkillDirs` 的候选包名**至少有一个能从 profile 解析出真实存在的 `skills/` 目录**（解析不到就抛错）；花名册补丁是否存在并列出练习员；**`cordis.patch.yml` 是否与 `src/` 源同步**；`package.json` 的 `files` 白名单是否齐全。它不依赖外部 YAML 包，也不需要先装依赖。
+`check-bundle.cjs` 检查十一类事：两个 preset 是否存在且子级先于主级声明；委派行是否指向 `study-practice`、是否还残留宿主 0.2.1 已删除的旧字段；有没有混进自挂的子 agent 运行时或 shell 行；两个 `tool-fs` 行是否都关掉了 `write` / `edit`；练习员的工具面是否恰好只有它该有的那几行；主 persona 的行为标记与技能路由是否齐全；每个技能的 frontmatter 是否合法、`customSkillDirs` 的候选包名**至少有一个能从 profile 解析出真实存在的 `skills/` 目录**（解析不到就抛错）；花名册补丁是否存在并列出练习员；**`cordis.patch.yml` 是否与 `src/` 源同步**；**教学契约**（"考核不盘问""学科逐步引导""示范通道""卡点类型""微目标"等承诺是否还在 persona/技能里）；`package.json` 的 `files` 白名单是否齐全。它不依赖外部 YAML 包，也不需要先装依赖。
 
 技能目录那一条尤其值得跑：包名写错时 preset 照样"加载成功"，但技能目录**静默为空**，只有真正调用 `skill` 时才报"unknown or no longer available"。现在解析失败会直接抛错，问题提前暴露在 preset 加载阶段。
 
@@ -210,12 +229,13 @@ powershell -ExecutionPolicy Bypass -File scripts/release.ps1 -Version 2.0.0
 │   └── hide-internal-presets.js  把健康的练习员 preset 从模式选择器里过滤掉
 ├── CHANGELOG.md            更新日志
 ├── RELEASING.md            发布流程
-├── skills/                 七个技能
+├── skills/                 八个技能
 │   ├── study-concept-coaching/
 │   ├── study-debug-coaching/
 │   ├── study-hint-ladder/
 │   ├── study-practice-subagent/
 │   ├── study-review-checklist/
+│   ├── study-subject-stepwise/
 │   ├── study-subject-math/
 │   └── study-subject-writing/
 ├── docs/

@@ -1,9 +1,9 @@
 {
   "name": "@dsh-community/dsh-study-mode",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "private": true,
   "type": "module",
-  "description": "Study mode for DSH: a coaching agent preset that helps a learner finish the task by themselves, with a five-level hint ladder and a hard ban on producing finished answers. 学习模式。",
+  "description": "Study mode for DSH: a stepwise coaching agent preset for schoolwork (maths, physics, chemistry and more) and programming, with a five-level hint ladder and a hard ban on producing finished answers. 学习模式。",
   "license": "MIT",
   "keywords": [
     "dsh",

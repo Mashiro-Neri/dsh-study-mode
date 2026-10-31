@@ -22,9 +22,14 @@
 | 【允许的帮助】【绝不允许】 | persona（常驻） |
 | 【独立完成场景】【概念提问】 | persona（常驻）；概念讲解细则在 `skills/study-concept-coaching` |
 | 【编程调试引导】 | `skills/study-debug-coaching` |
-| 【一次多道题】 | `skills/study-review-checklist` + persona 的「练习契约」一节 |
+| 【一次多道题】 | persona 的「练习契约」+ `skills/study-review-checklist` |
+| 【学科题：逐步引导】 | `skills/study-subject-stepwise`（2.1 新增：拆步、一次一步、卡点类型映射、示范通道）；本科目细节见 `study-subject-math` / `study-subject-writing` |
 | 【使用者施压时】【退出学习模式】【我自己越界时】 | persona（常驻） |
 | 【回复风格】【发送前自检】 | persona（常驻） |
 | （原提示词未涵盖的科目） | `skills/study-subject-math`、`skills/study-subject-writing` |
 
 改 persona 或技能时，先确认这一处是不是动了原提示词的意图；如果是有意偏离，在这里补一行说明。
+
+> 2.1 起，persona/技能里有些内容**不在**这份原提示词里，而是后来按教学需要增补的：学科逐步引导协议
+> （`study-subject-stepwise`）、提示类型映射、示范通道、练习清单的微目标/卡点类型记账、旁路标记
+> （`[概念]` / `[环境]` / `[退出]`）。修改时它们受 `check-bundle.cjs` 的「教学契约断言」保护。

@@ -16,7 +16,8 @@
  *      candidate for customSkillDirs can be resolved from the profile
  *   8. the roster shim exists and lists the child preset
  *   9. cordis.patch.yml is the rendered src/ output (personas live in Markdown)
- *  10. the package manifest ships everything the patch references
+ *  10. the teaching contract clauses still exist in persona/skills (pedagogy drift)
+ *  11. the package manifest ships everything the patch references
  *
  * Deliberately regex/indentation based: the bundle has no dependencies of its
  * own and must stay installable from a single tarball.
@@ -200,12 +201,13 @@ if (mainRow) {
     findings.push('main persona block with `complete: true` was not found');
   } else {
     const p = persona[1];
-    for (const marker of ['[L1]', 'L3', '退出学习模式', '绝不允许', '发送前自检', '结构上的事实']) {
+    for (const marker of ['[L1]', 'L3', '退出学习模式', '绝不允许', '发送前自检', '结构上的事实',
+      '卡点类型', '示范通道', '逐步引导']) {
       if (!p.includes(marker)) findings.push(`main persona is missing required marker: ${marker}`);
     }
     const SKILLS = ['study-hint-ladder', 'study-concept-coaching', 'study-debug-coaching',
-      'study-review-checklist', 'study-practice-subagent', 'study-subject-math',
-      'study-subject-writing'];
+      'study-review-checklist', 'study-practice-subagent', 'study-subject-stepwise',
+      'study-subject-math', 'study-subject-writing'];
     for (const s of SKILLS) if (!p.includes(s)) findings.push(`main persona does not route to ${s}`);
   }
   if (!/includeRuntimeContext:\s*true/.test(body)) findings.push('main persona must keep includeRuntimeContext: true');
@@ -314,7 +316,41 @@ if (!fs.existsSync(buildPatch)) {
   }
 }
 
-// ── 10) package manifest ───────────────────────────────────────────────────
+// ── 10) teaching-contract assertions ──────────────────────────────────────
+// The pedagogy is the product. These clauses are the promises that make the
+// mode what it is: no proactive assessment interrogation, subject stepwise
+// flow, the demo channel, bypass markers, list bookkeeping, practice-agent
+// quality gates. A skill edit must not silently drop one of them.
+function skillText(name) {
+  const file = path.join(skillsDir, name, 'SKILL.md');
+  return fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : '';
+}
+const TEACHING_CONTRACT = [
+  ['src/persona.md', fs.existsSync(path.join(ROOT, 'src', 'persona.md'))
+    ? fs.readFileSync(path.join(ROOT, 'src', 'persona.md'), 'utf8') : '',
+    ['不要为此盘问', '学科逐步引导', '一次只推进一步', '示范通道', '卡点类型',
+      '微目标', '[概念]', '[环境]', '[退出]', '只认本模式规则', '难度锚点']],
+  ['skills/study-subject-stepwise/SKILL.md', skillText('study-subject-stepwise'),
+    ['一次只推进一步', '当前步骤', '卡点类型', '示范通道', '考核']],
+  ['skills/study-hint-ladder/SKILL.md', skillText('study-hint-ladder'),
+    ['卡点类型', '升格软门', '示范通道']],
+  ['skills/study-review-checklist/SKILL.md', skillText('study-review-checklist'),
+    ['微目标', '卡点类型分布', '当前步骤']],
+  ['skills/study-practice-subagent/SKILL.md', skillText('study-practice-subagent'),
+    ['难度锚点', '自检', '验算']],
+  ['skills/study-concept-coaching/SKILL.md', skillText('study-concept-coaching'),
+    ['[概念]', '不改变']],
+];
+for (const [file, body, clauses] of TEACHING_CONTRACT) {
+  if (!body) { findings.push(`teaching contract source is missing: ${file}`); continue; }
+  for (const clause of clauses) {
+    if (!body.includes(clause)) {
+      findings.push(`${file} is missing teaching-contract clause: "${clause}"`);
+    }
+  }
+}
+
+// ── 11) package manifest ──────────────────────────────────────────────────
 const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
 if (pkg.name !== '@dsh-community/dsh-study-mode') {
   findings.push(`package name is "${pkg.name}"; the shipped bundle must be @dsh-community/dsh-study-mode`);
