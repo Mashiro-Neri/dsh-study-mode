@@ -1,0 +1,204 @@
+# 学习模式（Study mode）——一个 out-of-tree bundle
+#
+# 本补丁声明两个 Agent Preset，并插入一个花名册补丁：
+#   1. study-practice               子级 preset：只读练习员（内部用，不进模式选择器）
+#   2. study                        主 preset：「学习模式」本体
+#   3. study-hide-internal-presets  把练习员从 Web 花名册里过滤掉
+#
+# 为什么是两个 preset：从 DSH 0.2.1 起，`dsh-tool-subagent` 不再接受 `persona`
+# 与 `toolFilter`（加载时直接报迁移错误）。子 agent 的人格与工具面必须写成独立
+# 的 Agent Preset，委派工具用 `agentPreset` 指过去。宿主根已经提供 `subagents`
+# 服务与 `spawn` provider，preset 里不要再挂运行时：重复挂要么被
+# "Preset services require isolate realms" 审计拒绝，要么把练习员与控制工具
+# 拆到两个 runtime，`send_message(agent_id)` 就找不到刚建出来的练习员。
+#
+# 结构约束层（不是提示词约束）：
+#   - 没有 shell：不挂 tool-pwsh / tool-bash / tool-jobs，也不挂执行器行。
+#   - 没有 write / edit：主 preset 与练习员 preset 的 `tool-fs` 都设
+#     write:false / edit:false，只注册 read 与 read_image。
+#   - 练习员不能问用户、不能继续委派：子 preset 不挂 tool-ask-user，
+#     也不挂任何 tool-subagent* 行。
+#   - 练习员的六个工具恰好等于 v1.0.0 的 toolFilter.allow 名单
+#     （read / read_image / glob / grep / web_search / web_fetch）。
+#
+# 提示词分两层落地：
+#   - 常驻身份层 → persona 段落（每个请求都在场，不依赖模型自觉去加载）
+#   - 按需细则层 → skills/ 下的七个技能，用到才加载
+#
+# 技能发现必须自带 provider：宿主根那份 skill-filesystem 被 web-app 禁用，
+# 各 preset 自己挂一份（provider 按 preset 作用域提供）。`customSkillDirs`
+# 不能写死包名——同一个包在 link 安装与 tgz/registry 安装下包名不同
+# （@local/... vs @dsh-community/...），按候选列表逐个 createRequire，全部失败
+# 时抛可读错误，避免"模式加载成功、技能目录却静默为空"。
+#
+# 注意：preset 不能设置权限（沙箱/审批是会话级，由 permission-presets 拥有）。
+- insert:
+    # ════════════════════════════════════════════════════════════════════
+    # 子级 preset：练习员（内部用）
+    # ════════════════════════════════════════════════════════════════════
+    - id: preset-study-practice
+      name: '@deepseek-ai/dsh-agent-preset'
+      config:
+        id: study-practice
+        name: 学习模式 · 练习员
+        description: >-
+          「学习模式」内部使用的只读练习员子 agent：出同知识点的变体题、独立核对
+          学习者的判断、补充反例、核实官方文档。没有 shell，没有 write / edit。
+          不要直接用它开聊。
+        order: 51
+        plugins:
+          # 人格：v1.0.0 里 tool-subagent.persona 的原文，逐字搬过来。
+          - id: persona
+            name: '@deepseek-ai/dsh-persona'
+            config:
+              prefix: |
+@@PRACTICE_PERSONA@@
+
+          # 只读工具面：恰好产出 read / read_image / glob / grep / web_search / web_fetch。
+          # tool-fs 的 write/edit 开关是 0.2.1 的 Config 字段：关掉后这两个工具
+          # 根本不注册，不是"挂着但被规则禁止"。
+          - id: tool-fs
+            name: '@deepseek-ai/dsh-tool-fs'
+            config:
+              read: true
+              readImage: true
+              write: false
+              edit: false
+          - id: tool-fs-search
+            name: '@deepseek-ai/dsh-tool-fs-search'
+            config:
+              sampleOverCapGlobResults: false
+          - id: tool-web
+            name: '@deepseek-ai/dsh-tool-web'
+            config:
+              search: true
+              fetch: true
+              searchTimeoutMs: 60000
+          # 刻意不挂：tool-subagent*（禁止练习员继续委派）、tool-ask-user
+          # （练习员不能向使用者提问）、tool-skill / skill-filesystem（它的人格
+          # 不引用技能）、tool-todo、任何 shell 行。
+
+    # ════════════════════════════════════════════════════════════════════
+    # 主 preset：学习模式
+    # ════════════════════════════════════════════════════════════════════
+    - id: preset-study
+      name: '@deepseek-ai/dsh-agent-preset'
+      config:
+        id: study
+        name: 学习模式
+        description: >-
+          以学习教练的身份陪使用者自己做题：默认只反问，按 L0–L3 提示阶梯逐级放开，
+          不给成品答案、不代写代改代码；概念提问直接讲。
+        order: 5
+        plugins:
+          # ── 身份：常驻规则 ──────────────────────────────────────────────────
+          # 这里只放"每个请求都必须在场"的东西：身份、优先级、底线条款、级别标记、
+          # 固定流程骨架、阶梯分级、绝不允许、施压应对、退出开关、发送前自检。
+          # 展开的细则（阶梯怎么逐级松、概念怎么讲、调试怎么导、复盘怎么写）
+          # 放进技能，按需加载——常驻段落每个请求都要付 token，细则不必。
+          - id: persona
+            name: '@deepseek-ai/dsh-persona'
+            config:
+              prefix: |
+@@MAIN_PERSONA@@
+              # 保持 preset 专属身份，避免把部署级人设叠在上面。
+              complete: true
+              # 保留 runtime-context（沙箱策略、审批策略等）——它们是真实约束，
+              # 缺了会让模型对当前权限产生错误认知。
+              includeRuntimeContext: true
+
+          # ── 只读侧工具面 ──────────────────────────────────────────────────
+          # 结构约束：这里没有 shell（不挂 tool-pwsh / tool-bash / tool-jobs），
+          # 也没有 write / edit（tool-fs 关掉这两个开关，工具根本不注册）。
+          # 所以"搭项目骨架、装依赖、代跑代码、改环境配置、写文件"在物理上
+          # 做不到，不依赖模型遵守规则。
+          - id: tool-fs
+            name: '@deepseek-ai/dsh-tool-fs'
+            config:
+              write: false
+              edit: false
+          - id: tool-fs-search
+            name: '@deepseek-ai/dsh-tool-fs-search'
+            config:
+              sampleOverCapGlobResults: false
+          - id: tool-web
+            name: '@deepseek-ai/dsh-tool-web'
+            config:
+              fetch: true
+              searchTimeoutMs: 60000
+          - id: tool-ask-user
+            name: '@deepseek-ai/dsh-tool-ask-user'
+          - id: tool-skill
+            name: '@deepseek-ai/dsh-tool-skill'
+          # 技能发现必须自带 provider（见文件头注释）。
+          - id: skill-filesystem
+            name: '@deepseek-ai/dsh-skill-filesystem'
+            config:
+              customSkillDirs:
+                - !!js >-
+                  (function () {
+                    var path = process.getBuiltinModule('node:path');
+                    var req = process.getBuiltinModule('node:module').createRequire(baseUrl);
+                    var names = ['@dsh-community/dsh-study-mode', '@local/dsh-study-mode'];
+                    for (var i = 0; i < names.length; i++) {
+                      try { return path.join(path.dirname(req.resolve(names[i] + '/package.json')), 'skills'); } catch (e) {}
+                    }
+                    throw new Error('study-mode: cannot locate its own installed package; tried ' + names.join(', '));
+                  })()
+          - id: tool-todo
+            name: '@deepseek-ai/dsh-tool-todo'
+            config:
+              allowParallelInProgress: false
+
+          # ── 上下文压缩 ────────────────────────────────────────────────────
+          # 一次练习动辄几十轮，不挂压缩的话上下文会一直涨到装不下。
+          # 压缩器是"提供 service"的行，必须和消费方一起隔离在自己的 realm 里
+          # （官方 preset 同款写法）。
+          - id: compaction
+            name: cordis:group
+            group: true
+            isolate:
+              compaction: true
+              toolResultPruner: true
+            config:
+              - id: compaction-basic
+                name: '@deepseek-ai/dsh-compaction-basic'
+              - id: command-compact
+                name: '@deepseek-ai/dsh-command-compact'
+              - id: tool-result-pruner
+                name: '@deepseek-ai/dsh-compaction-tool-result-pruner'
+                config:
+                  thresholdChars: 8192
+                  headChars: 4096
+                  tailChars: 1024
+
+          # ── 子 agent 控制工具：send_message / interrupt_agent / list_agents ──
+          # 必须放在 preset 顶层，不能塞进 isolate 组：工具是 scope 贡献，
+          # 跟着 service 隔离会从会话工具面里消失，模型就会去调全局的
+          # Agent Teams 同名工具（参数名是 `target`，不是本包的 `agent_id`）。
+          - id: tool-subagent-control
+            name: '@deepseek-ai/dsh-tool-subagent-control'
+          - id: tool-subagent-list-agents
+            name: '@deepseek-ai/dsh-tool-subagent-control/list-agents'
+
+          # ── 唯一的委派工具：人格与工具面在上面的子级 preset 里 ────────────
+          # 0.2.1 起 tool-subagent 不再接受 persona / toolFilter /
+          # backgroundMode / enableRunInBackground：子 agent 的 persona 与工具面
+          # 由子级 preset 声明，这里只用 agentPreset 指过去。spawn 后端自带
+          # continuable 能力，每次调用都返回 `started subagent <childId>`。
+          # 不配 allowedAgentPresets：模型不能自行换 preset。
+          - id: tool-subagent-practice
+            name: '@deepseek-ai/dsh-tool-subagent'
+            config:
+              provider: spawn
+              toolName: subagent_practice
+              agentPreset: study-practice
+
+    # ════════════════════════════════════════════════════════════════════
+    # 从模式选择器里隐藏子级 preset
+    # ════════════════════════════════════════════════════════════════════
+    # `agent-presets` 没有"隐藏"概念：花名册方法返回全部声明，所以练习员会像
+    # 普通模式一样出现在列表里。这个插件只包装花名册方法，注册表本身不动——
+    # 委派工具仍然解析得到它。相对路径以本补丁文件所在目录为准。
+    - id: study-hide-internal-presets
+      name: './plugin/hide-internal-presets.js'

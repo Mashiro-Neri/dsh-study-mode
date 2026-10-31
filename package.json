@@ -1,0 +1,39 @@
+{
+  "name": "@dsh-community/dsh-study-mode",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Study mode for DSH: a coaching agent preset that helps a learner finish the task by themselves, with a five-level hint ladder and a hard ban on producing finished answers. 学习模式。",
+  "license": "MIT",
+  "keywords": [
+    "dsh",
+    "dsh-bundle",
+    "agent-preset",
+    "study",
+    "tutor",
+    "deepseek-harness"
+  ],
+  "engines": {
+    "dsh": ">=0.2.1-rc.2"
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    "./cordis.patch.yml": "./cordis.patch.yml"
+  },
+  "files": [
+    "cordis.patch.yml",
+    "plugin",
+    "skills",
+    "docs",
+    "README.md",
+    "README.zh.md",
+    "INSTALL.zh.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}
