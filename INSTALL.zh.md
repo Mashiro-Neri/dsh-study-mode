@@ -112,9 +112,9 @@ dsh plugin --profile desktop add github:<你的用户名>/dsh-study-mode
 - 学科题默认逐步引导：拆步、一次只推进一步，他做一步你判一步；卡点类型决定提示形态
 - 上下文压缩（`/compact` 与工具结果修剪），长练习会话不会一路涨到装不下
 
-**八个技能**随包分发：
+**七个技能**随包分发：
 
-`study-hint-ladder`（阶梯与卡点类型映射）、`study-concept-coaching`（概念讲解）、`study-debug-coaching`（编程调试引导）、`study-review-checklist`（复盘与练习契约）、`study-practice-subagent`（练习员规程与质量门）、`study-subject-stepwise`（学科逐步引导协议）、`study-subject-math`（数理化推理）、`study-subject-writing`（写作类）
+`study-hint-ladder`（阶梯与卡点类型映射）、`study-concept-coaching`（概念讲解）、`study-debug-coaching`（编程调试引导）、`study-review-checklist`（复盘与练习契约）、`study-practice-subagent`（练习员规程与质量门）、`study-subject`（学科逐步引导与数理化推理）、`study-subject-writing`（写作类）
 
 ---
 
@@ -126,7 +126,7 @@ plugin_manager
   target: @dsh-community/dsh-study-mode
 ```
 
-八个技能和两个 preset（含隐藏的练习员）跟着一起移除，不用另外清理。手工安装的话，把 `<profile>\package.json` 里那两处条目删掉、重启即可。
+七个技能和两个 preset（含隐藏的练习员）跟着一起移除，不用另外清理。手工安装的话，把 `<profile>\package.json` 里那两处条目删掉、重启即可。
 
 ---
 

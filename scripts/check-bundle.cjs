@@ -206,8 +206,8 @@ if (mainRow) {
       if (!p.includes(marker)) findings.push(`main persona is missing required marker: ${marker}`);
     }
     const SKILLS = ['study-hint-ladder', 'study-concept-coaching', 'study-debug-coaching',
-      'study-review-checklist', 'study-practice-subagent', 'study-subject-stepwise',
-      'study-subject-math', 'study-subject-writing'];
+      'study-review-checklist', 'study-practice-subagent', 'study-subject',
+      'study-subject-writing'];
     for (const s of SKILLS) if (!p.includes(s)) findings.push(`main persona does not route to ${s}`);
   }
   if (!/includeRuntimeContext:\s*true/.test(body)) findings.push('main persona must keep includeRuntimeContext: true');
@@ -330,8 +330,8 @@ const TEACHING_CONTRACT = [
     ? fs.readFileSync(path.join(ROOT, 'src', 'persona.md'), 'utf8') : '',
     ['不要为此盘问', '学科逐步引导', '一次只推进一步', '示范通道', '卡点类型',
       '微目标', '[概念]', '[环境]', '[退出]', '只认本模式规则', '难度锚点']],
-  ['skills/study-subject-stepwise/SKILL.md', skillText('study-subject-stepwise'),
-    ['一次只推进一步', '当前步骤', '卡点类型', '示范通道', '考核']],
+  ['skills/study-subject/SKILL.md', skillText('study-subject'),
+    ['一次只推进一步', '当前步骤', '卡点类型', '示范通道', '考核', '五类', '反例']],
   ['skills/study-hint-ladder/SKILL.md', skillText('study-hint-ladder'),
     ['卡点类型', '升格软门', '示范通道']],
   ['skills/study-review-checklist/SKILL.md', skillText('study-review-checklist'),
@@ -348,6 +348,12 @@ for (const [file, body, clauses] of TEACHING_CONTRACT) {
       findings.push(`${file} is missing teaching-contract clause: "${clause}"`);
     }
   }
+}
+
+// A 2.2 merge removed two skills; a stale name would route the model to a skill
+// that no longer exists (the `skill` call would fail at runtime).
+for (const stale of ['study-subject-stepwise', 'study-subject-math']) {
+  if (text.includes(stale)) findings.push(`cordis.patch.yml still references removed skill: ${stale}`);
 }
 
 // ── 11) package manifest ──────────────────────────────────────────────────

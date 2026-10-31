@@ -23,7 +23,7 @@
 | 层 | 内容 | 生效方式 |
 |---|---|---|
 | 常驻身份层 | 身份、优先级、底线条款、级别标记、固定流程、阶梯分级、绝不允许、施压应对、退出开关、发送前自检 | persona，**每个请求都在场**，约 4200 字 |
-| 按需细则层 | 八个技能：阶梯细则、概念讲解、调试引导、复盘与进度、练习员规程、学科逐步引导、数理化、写作 | 用到才由模型加载 |
+| 按需细则层 | 七个技能：阶梯细则、概念讲解、调试引导、复盘与进度、练习员规程、学科（逐步引导+数理化）、写作 | 用到才由模型加载 |
 | 结构约束层 | 工具面：**没有 shell，也没有 `write` / `edit`**；练习员另外没有 `ask_user_question`、没有委派工具 | 会话创建时定型 |
 
 ## 级别与阶梯
@@ -77,7 +77,7 @@
 - 学科逐步引导协议：拆步、一次一步、卡点类型映射、示范通道
 - 上下文压缩：长练习会话不会一路涨到装不下
 
-八个技能随包分发，通过 `skill-filesystem` 的 `customSkillDirs` 发现，路径在加载时从本包位置解析：
+七个技能随包分发，通过 `skill-filesystem` 的 `customSkillDirs` 发现，路径在加载时从本包位置解析：
 
 | 技能 | 作用 |
 |---|---|
@@ -86,8 +86,7 @@
 | `study-debug-coaching` | 编程题的调试三连问、带他自己读报错、代码评审只指问题不代改 |
 | `study-review-checklist` | 什么时候才该复盘、复盘说多少、练习契约（清单怎么立、状态与卡点类型怎么记）、换题复位 |
 | `study-practice-subagent` | 练习员什么时候派、派活消息怎么写、变体质量门、时序限制、"产物不得覆盖原题"怎么执行 |
-| **`study-subject-stepwise`** | **学科题逐步引导协议：拆步、一次只推进一步、每步先问什么、卡住怎么用阶梯、整题思路什么时候才能讲** |
-| `study-subject-math` | 数理化：按"条件/目标/转化"拆题意、L3 留空推导链、五类高频错误环节的定位问法、反例思维 |
+| **`study-subject`** | **学科题逐步引导与推理：拆步、一次只推进一步、留空推导链、五类高频错误、反例思维** |
 | `study-subject-writing` | 作文与文本类："一个完整句子都不能给"这条硬边界、按"主张—结构—论据"拆解、写作版 L3 提纲 |
 
 后面的学科技能只替换"线索和骨架长什么样"，不覆盖底线与流程。加新科目就是往 `skills/` 里加一个目录，不用动 preset。
@@ -132,7 +131,7 @@
 
 **两个产物的用途不同**：`.tgz` 是给 DSH 的 `plugin_manager` 吃的安装包；`.zip` 是给人看的整包——拿到就能读源码、看文档、直接跑打包脚本，不需要另外去 clone。zip 里的 tgz 校验值与它自带的 `.sha256` 一致。
 
-zip 里共 33 个文件（口径：一次干净的重新打包——先 `build-package.ps1` 再 `build-zip.ps1`：仓库源码树 31 个文件 + `dist/` 里的 tgz 与它的 sha256；不含正在生成的 zip 本身，也不含 `.git` / `node_modules` 这类被排除项）：
+zip 里共 32 个文件（口径：一次干净的重新打包——先 `build-package.ps1` 再 `build-zip.ps1`：仓库源码树 30 个文件 + `dist/` 里的 tgz 与它的 sha256；不含正在生成的 zip 本身，也不含 `.git` / `node_modules` 这类被排除项）：
 
 ```
 dsh-study-mode-2.0.0/
@@ -140,7 +139,7 @@ dsh-study-mode-2.0.0/
 ├── cordis.patch.yml        由 src/ 生成的组合补丁
 ├── package.json
 ├── plugin/                 花名册补丁（隐藏健康的练习员 preset）
-├── skills/                 八个技能
+├── skills/                 七个技能
 ├── docs/                   原始提示词 + 对照表
 ├── scripts/                生成、自检、契约快照、真机验证与打包脚本
 ├── dist/                   打包产物（tgz 及其校验值）
@@ -153,7 +152,7 @@ dsh-study-mode-2.0.0/
 ```
 package/cordis.patch.yml          preset 声明
 package/plugin/hide-internal-presets.js  花名册补丁
-package/skills/…/SKILL.md         八个技能
+package/skills/…/SKILL.md         七个技能
 package/docs/source-prompt.zh.md  原始提示词（改动时可对照）
 package/README.md, README.zh.md, INSTALL.zh.md, CHANGELOG.md, LICENSE
 ```
@@ -229,14 +228,13 @@ powershell -ExecutionPolicy Bypass -File scripts/release.ps1 -Version 2.0.0
 │   └── hide-internal-presets.js  把健康的练习员 preset 从模式选择器里过滤掉
 ├── CHANGELOG.md            更新日志
 ├── RELEASING.md            发布流程
-├── skills/                 八个技能
+├── skills/                 七个技能
 │   ├── study-concept-coaching/
 │   ├── study-debug-coaching/
 │   ├── study-hint-ladder/
 │   ├── study-practice-subagent/
 │   ├── study-review-checklist/
-│   ├── study-subject-stepwise/
-│   ├── study-subject-math/
+│   ├── study-subject/
 │   └── study-subject-writing/
 ├── docs/
 │   ├── source-prompt.zh.md 原始提示词，以及与 persona/技能的对照表

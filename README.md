@@ -25,7 +25,7 @@ The default learner is a student working through **schoolwork**: maths, physics 
 | Layer | Contents | How it applies |
 |---|---|---|
 | Standing identity | Role, priority, bottom-line clause, level marker, fixed flow, the ladder, hard bans, pressure handling, the exit switch, a pre-send self-check | persona, **present on every request**, ~4,200 characters |
-| On-demand detail | Eight skills: ladder detail, concept coaching, code debug coaching, review & progress, practice-agent protocol, subject step-by-step, maths/sciences, writing | loaded by the model only when needed |
+| On-demand detail | Seven skills: ladder detail, concept coaching, code debug coaching, review & progress, practice-agent protocol, subject step-by-step + sciences, writing | loaded by the model only when needed |
 | Structural constraint | Toolset: **no shell and no `write` / `edit`**; the practice agent additionally has no `ask_user_question` and no delegation tools | fixed at session creation |
 
 ## Levels and the ladder
@@ -79,7 +79,7 @@ One mode (plus an internal practice preset that never appears in the mode picker
 - Subject step-by-step protocol: decomposition, one step at a time, stuck-point → hint-shape mapping, demo channel
 - Context compaction, so a long practice session doesn't grow until it overflows
 
-Eight skills ship inside the bundle and are discovered through `skill-filesystem`'s `customSkillDirs`, with the path resolved from the bundle's own location:
+Seven skills ship inside the bundle and are discovered through `skill-filesystem`'s `customSkillDirs`, with the path resolved from the bundle's own location:
 
 | Skill | Purpose |
 |---|---|
@@ -88,8 +88,7 @@ Eight skills ship inside the bundle and are discovered through `skill-filesystem
 | `study-debug-coaching` | The three opening questions for programming problems, guiding them to read their own error, reviewing without rewriting |
 | `study-review-checklist` | When a review is actually warranted, how short it should be, the practice contract (list, state and stuck-point types), resetting between problems |
 | `study-practice-subagent` | When to dispatch the practice agent, how to write the task, variant quality gates, timing, and enforcing "its output must never cover the original problem" |
-| **`study-subject-stepwise`** | **The step-by-step protocol for subject problems: decomposition, one step per turn, what to ask each step, when the ladder applies, when a full solution is allowed** |
-| `study-subject-math` | Maths/physics/chemistry: givens/goal/transformation, a derivation-chain L3, the five common failure points, counter-example thinking |
+| **`study-subject`** | **Step-by-step subject coaching: decomposition, one step per turn, a derivation-chain L3, the five common failure points, counter-example thinking** |
 | `study-subject-writing` | Essays and text work: the hard rule that **not one complete sentence may be supplied**, claim/structure/evidence, a blank-outline L3, reviewing the learner's own prose |
 
 The subject skills only swap out what a clue or a skeleton looks like; they do not override the bottom line or the process. Adding a subject means adding one directory under `skills/` — no preset change.
@@ -134,7 +133,7 @@ Built artifacts live in `dist/`:
 
 **The two artifacts serve different purposes.** The `.tgz` is what DSH's `plugin_manager` consumes; the `.zip` is the human-facing bundle — unzip it and you have the source, the docs and working build scripts, no clone required. The tarball inside the zip matches its own bundled `.sha256`.
 
-The zip holds 33 files (counting rule: one clean rebuild — `build-package.ps1` then `build-zip.ps1`: 31 files from the repository source tree plus the tarball and its sha256 in `dist/`; the zip being generated is not inside itself, and `.git` / `node_modules` are excluded):
+The zip holds 32 files (counting rule: one clean rebuild — `build-package.ps1` then `build-zip.ps1`: 30 files from the repository source tree plus the tarball and its sha256 in `dist/`; the zip being generated is not inside itself, and `.git` / `node_modules` are excluded):
 
 ```
 dsh-study-mode-2.0.0/
@@ -142,7 +141,7 @@ dsh-study-mode-2.0.0/
 ├── cordis.patch.yml       generated composition patch
 ├── package.json
 ├── plugin/                roster shim (hides healthy internal presets)
-├── skills/                the eight skills
+├── skills/                the seven skills
 ├── docs/                  original prompt + mapping table
 ├── scripts/               render, self-check, contract snapshot, verification, build
 ├── dist/                  build artifacts (tarball + checksum)
@@ -155,7 +154,7 @@ The package is `@dsh-community/dsh-study-mode`, declares `dsh.bundle.patch = ./c
 ```
 package/cordis.patch.yml         the preset declarations
 package/plugin/hide-internal-presets.js  the roster shim
-package/skills/…/SKILL.md        the eight skills
+package/skills/…/SKILL.md        the seven skills
 package/docs/source-prompt.zh.md the original prompt, for diffing against
 package/README.md, README.zh.md, INSTALL.zh.md, CHANGELOG.md, LICENSE
 ```
@@ -231,14 +230,13 @@ Structural changes need a DSH restart; skill bodies hot-reload. Release steps li
 │   └── hide-internal-presets.js  filters healthy internal presets out of the mode picker
 ├── CHANGELOG.md            release notes
 ├── RELEASING.md            release process
-├── skills/                 the eight skills
+├── skills/                 the seven skills
 │   ├── study-concept-coaching/
 │   ├── study-debug-coaching/
 │   ├── study-hint-ladder/
 │   ├── study-practice-subagent/
 │   ├── study-review-checklist/
-│   ├── study-subject-stepwise/
-│   ├── study-subject-math/
+│   ├── study-subject/
 │   └── study-subject-writing/
 ├── docs/
 │   ├── source-prompt.zh.md the original prompt + mapping table
