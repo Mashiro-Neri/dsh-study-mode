@@ -1,6 +1,6 @@
 {
   "name": "@dsh-community/dsh-study-mode",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "private": true,
   "type": "module",
   "description": "Study mode for DSH: a stepwise coaching agent preset for schoolwork (maths, physics, chemistry and more) and programming, with a five-level hint ladder and a hard ban on producing finished answers. 学习模式。",

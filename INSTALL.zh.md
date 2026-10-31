@@ -105,7 +105,7 @@ dsh plugin --profile desktop add github:<你的用户名>/dsh-study-mode
 
 **一个模式**（preset id `study`，显示名「学习模式」，排序 5），外加一个只在内部使用、不占模式列表的练习员 preset（`study-practice`，排序 51，被花名册补丁隐藏）：
 
-- 常驻规则约 6800 字/请求（身份、底线条款、L0–L3 阶梯、学科逐步引导、示范通道、固定流程、练习契约、发送前自检）
+- 常驻规则约 4200 字/请求（身份、底线条款、L0–L3 阶梯、学科逐步引导、示范通道、固定流程、练习契约、发送前自检）
 - 工具面：`read` / `read_image` / `glob` / `grep` / `web_search` / `web_fetch` / `ask_user_question` / `skill` / `todo_write` + 子代理控制工具（`send_message` / `interrupt_agent` / `list_agents`）
 - **没有 `pwsh` / `bash` / `jobs`，也没有 `write` / `edit`**——搭骨架、装依赖、代跑代码、写文件在物理上做不到（`tool-fs` 的 `write` / `edit` 开关是关掉的，工具根本不注册）
 - 一个只读的练习员子代理 `subagent_practice`：只有上面那六个读类工具，没有 `ask_user_question`、没有委派工具

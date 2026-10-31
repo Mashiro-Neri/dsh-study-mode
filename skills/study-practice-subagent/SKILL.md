@@ -1,6 +1,6 @@
 ---
 name: study-practice-subagent
-description: 学习模式里练习员 subagent_practice 的完整派活规程——什么时候该派、派活消息怎么写、childId 怎么留、send_message 的时序限制与故障排查、以及"练习员产物不得覆盖原题"这条铁律怎么执行。在准备派练习员出练习题变体、独立核对学习者答案、或让他找反例时加载。
+description: 练习员派活规程：何时派、消息怎么写、质量门、时序与红线。
 ---
 
 # 练习员规程

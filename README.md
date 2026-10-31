@@ -24,7 +24,7 @@ The default learner is a student working through **schoolwork**: maths, physics 
 
 | Layer | Contents | How it applies |
 |---|---|---|
-| Standing identity | Role, priority, bottom-line clause, level marker, fixed flow, the ladder, hard bans, pressure handling, the exit switch, a pre-send self-check | persona, **present on every request**, ~6,800 characters |
+| Standing identity | Role, priority, bottom-line clause, level marker, fixed flow, the ladder, hard bans, pressure handling, the exit switch, a pre-send self-check | persona, **present on every request**, ~4,200 characters |
 | On-demand detail | Eight skills: ladder detail, concept coaching, code debug coaching, review & progress, practice-agent protocol, subject step-by-step, maths/sciences, writing | loaded by the model only when needed |
 | Structural constraint | Toolset: **no shell and no `write` / `edit`**; the practice agent additionally has no `ask_user_question` and no delegation tools | fixed at session creation |
 
@@ -72,7 +72,7 @@ Three deliberate choices:
 
 One mode (plus an internal practice preset that never appears in the mode picker):
 
-- A standing rule set (~6,800 characters per request)
+- A standing rule set (~4,200 characters per request)
 - Tools: `read` / `read_image` / `glob` / `grep` / `web_search` / `web_fetch` / `ask_user_question` / `skill` / `todo_write` plus sub-agent control (`send_message` / `interrupt_agent` / `list_agents`)
 - **No** `pwsh` / `bash` / `jobs`, and **no** `write` / `edit`
 - One read-only practice sub-agent (a separate preset, hidden from the mode picker by the roster shim)
@@ -178,7 +178,7 @@ package/README.md, README.zh.md, INSTALL.zh.md, CHANGELOG.md, LICENSE
 
 **`send_message` has a timing constraint**: you cannot deliver while the practice agent is running — it returns `subagent "<id>" is unavailable`. Not a failure; wait for the round to finish.
 
-**The standing rules ride on every request**, around 6,800 characters (up from ~5,200 in 2.0 because of the step-by-step protocol, demo channel and state bookkeeping). The tradeoff is that the bottom line and the process skeleton must always be present, while detail loads on demand.
+**The standing rules ride on every request**, around 4,200 characters (2.1.1 cut this back from 6,800 without changing any rule). The tradeoff is that the bottom line and the process skeleton must always be present, while detail loads on demand. Also note: the skill catalog is injected once per session (name + one-line description) and each skill body is loaded whole only when the `skill` tool is called; 2.1.1 shrank the catalog descriptions from 1,028 to 308 characters total.
 
 **The "Agent Teams" plugin no longer has to be off.** Since 0.2.1 a same-named tool registered in the preset scope shadows the global one: this mode's `send_message` takes `agent_id`, the teams version takes `target`, so the parameter name tells you which one you got.
 
